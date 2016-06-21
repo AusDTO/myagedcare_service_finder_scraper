@@ -57,13 +57,32 @@ def find_services(serviceType, suburb, state, postcode)
   data = JSON.parse(RestClient.post("https://servicefinder.myagedcare.gov.au/api/acg/v1/helpAtHomeFinder",
     request_body.to_json,
     content_type: 'application/json', x_api_key: '7ca4c25771c54ca283c682a185e72277'))
-  items = data["helpAtHomeFinderResponse"]["helpAtHomeFinderOutput"]["helpAtHomeServices"]["helpAtHomeService"]
+  output = data["helpAtHomeFinderResponse"]["helpAtHomeFinderOutput"]
+  # Wow. Absolutely no consistency in how the data is returned. If there is no result
+  # then why return an empty array? Well, that would just make it TOO easy
+  if output["helpAtHomeServices"]
+    items = output["helpAtHomeServices"]["helpAtHomeService"]
+  else
+    items = []
+  end
+  # Seems that the result of this isn't always an array. Am I doing something wrong here?
+  items = [items] unless items.kind_of?(Array)
   items.map{|i| extract_leaf_nodes(i)}
 end
 
-records = get_suburbs_chunk[:records]
-p records
+# TODO Get all the places (just getting the first 1000 for the time being)
+puts "Getting places..."
+places = get_suburbs_chunk[:records]
+puts "Getting all the service types..."
+service_types = get_service_types
 
-# p get_service_types
-
-# p find_services("Personal Care", "KATOOMBA", "NSW", "2780")
+places.each do |place|
+  puts "Getting data for #{place[:suburb]}, #{place[:state]}, #{place[:postcode]}..."
+  service_types.each do |type|
+    puts "#{type}..."
+    record = find_services(type, place[:suburb], place[:state], place[:postcode])
+    #p record
+    # TODO Check that we aren't saving the same data again and again
+    ScraperWiki.save_sqlite(["iD"], record)
+  end
+end
