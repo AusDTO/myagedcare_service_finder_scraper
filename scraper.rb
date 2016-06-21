@@ -1,14 +1,16 @@
 require 'scraperwiki'
 require 'rest-client'
 
-def get_suburbs_chunk
+def get_suburbs_chunk(url)
   # Read in a page
-  page = RestClient.get("https://servicefinder.myagedcare.gov.au/api/nhsd/v1/reference/set/general;16072014;suburb/search",
+  page = RestClient.get("https://servicefinder.myagedcare.gov.au/api/nhsd/v1" + url,
     {"x-api-key" => '7ca4c25771c54ca283c682a185e72277'})
 
   d = JSON.parse(page)
 
-  next_url = d["response"]["_links"]["next"]["href"]
+  if d["response"]["_links"]["next"]
+    next_url = d["response"]["_links"]["next"]["href"]
+  end
   records = d["response"]["_embedded"]["referenceItem"].map do |item|
     a = item["itemDescription"].split(";")
     {suburb: a[0], postcode: a[1].strip, state: a[2].strip}
@@ -70,9 +72,26 @@ def find_services(serviceType, suburb, state, postcode)
   items.map{|i| extract_leaf_nodes(i)}
 end
 
-# TODO Get all the places (just getting the first 1000 for the time being)
+def get_places
+  url = "/reference/set/general;16072014;suburb/search?offset=1000&limit=1000"
+
+  c = 0
+  next_url = true
+  places = []
+  while next_url
+    url = "/reference/set/general;16072014;suburb/search?offset=#{c * 1000}&limit=1000"
+    chunk = get_suburbs_chunk(url)
+    next_url = chunk[:next_url]
+    places += chunk[:records]
+    c += 1
+  end
+  places
+end
+
+
 puts "Getting places..."
-places = get_suburbs_chunk[:records]
+places = get_places
+
 puts "Getting all the service types..."
 service_types = get_service_types
 
