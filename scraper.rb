@@ -1,5 +1,6 @@
 require 'scraperwiki'
 require 'mechanize'
+require 'rest-client'
 
 def get_suburbs_chunk(agent)
   # Read in a page
@@ -16,6 +17,17 @@ def get_suburbs_chunk(agent)
   {next_url: next_url, records: records}
 end
 
-agent = Mechanize.new
+def get_service_types
+  result = JSON.parse(RestClient.post("https://servicefinder.myagedcare.gov.au/api/acg/v1/retrieveServiceCatalogue",
+    '{"retrieveServiceCatalogueRequest":{"retrieveServiceCatalogueInput":""}}',
+    content_type: 'application/json', x_api_key: '7ca4c25771c54ca283c682a185e72277'))
+  # TODO Check if we need to take account of activeFlag
+  result["retrieveServiceCatalogueResponse"]["retrieveServiceCatalogueOutput"]["services"]["service"].map{|t| t["serviceType"]}
+end
 
-p get_suburbs_chunk(agent)
+# agent = Mechanize.new
+#
+# records = get_suburbs_chunk(agent)[:records]
+# p records
+
+p get_service_types
