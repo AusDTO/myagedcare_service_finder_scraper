@@ -95,8 +95,20 @@ places = get_places
 puts "Getting all the service types..."
 service_types = get_service_types
 
+if ScraperWiki.get_var("suburb")
+  suburb = ScraperWiki.get_var("suburb")
+  state = ScraperWiki.get_var("state")
+  postcode = ScraperWiki.get_var("postcode")
+  puts "Restarting scraper from the beginning of #{suburb}, #{state}, #{postcode}"
+  i = places.index(suburb: suburb, state: state, postcode: postcode)
+  places = places[i..-1]
+end
+
 places.each do |place|
   puts "Getting data for #{place[:suburb]}, #{place[:state]}, #{place[:postcode]}..."
+  ScraperWiki.save_var("suburb", place[:suburb])
+  ScraperWiki.save_var("state", place[:state])
+  ScraperWiki.save_var("postcode", place[:postcode])
   service_types.each do |type|
     puts "#{type}..."
     record = find_services(type, place[:suburb], place[:state], place[:postcode])
@@ -105,3 +117,7 @@ places.each do |place|
     ScraperWiki.save_sqlite(["iD"], record)
   end
 end
+
+ScraperWiki.save_var("suburb", nil)
+ScraperWiki.save_var("state", nil)
+ScraperWiki.save_var("postcode", nil)
