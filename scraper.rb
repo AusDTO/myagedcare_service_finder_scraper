@@ -95,6 +95,10 @@ places = get_places
 puts "Getting all the service types..."
 service_types = get_service_types
 
+ScraperWiki.save_var("suburb", nil)
+ScraperWiki.save_var("state", nil)
+ScraperWiki.save_var("postcode", nil)
+
 if ScraperWiki.get_var("suburb")
   suburb = ScraperWiki.get_var("suburb")
   state = ScraperWiki.get_var("state")
@@ -114,7 +118,9 @@ places.each do |place|
     record = find_services(type, place[:suburb], place[:state], place[:postcode])
     #p record
     # TODO Check that we aren't saving the same data again and again
-    ScraperWiki.save_sqlite(["iD"], record)
+    # A particular organisation (keyed by iD) might provide services in multiple
+    # outlets (keyed by outletID) and each outlet provides services to multiple locations.
+    ScraperWiki.save_sqlite(["outletID"], record)
   end
 end
 
