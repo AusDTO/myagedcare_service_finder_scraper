@@ -95,10 +95,6 @@ places = get_places
 puts "Getting all the service types..."
 service_types = get_service_types
 
-ScraperWiki.save_var("suburb", nil)
-ScraperWiki.save_var("state", nil)
-ScraperWiki.save_var("postcode", nil)
-
 if ScraperWiki.get_var("suburb")
   suburb = ScraperWiki.get_var("suburb")
   state = ScraperWiki.get_var("state")
